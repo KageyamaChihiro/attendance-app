@@ -61,25 +61,17 @@
         <button type="submit" class="clock-out">退勤</button>
     </form>
 
-    <table>
+    <table border="1">
         <tr>
+            <th>ID</th>
             <th>日付</th>
-            <th>出勤</th>
-            <th>退勤</th>
-            <th>操作</th>
+            <th>状態</th>
         </tr>
         @foreach($attendances as $attendance)
-        <tr class="{{ $attendance->work_date == date('Y-m-d') ? 'today' : '' }}">
-            <td>{{ $attendance->work_date }}</td>
-            <td>
-                {{ $attendance->clock_in ? \Carbon\Carbon::parse($attendance->clock_in)->format('h:i') : '--' }}
-            </td>
-            <td>
-                {{ $attendance->clock_out ? \Carbon\Carbon::parse($attendance->clock_out)->format('h:i') : '--' }}
-            </td>
-            <td>
-                <a href="/attendance/edit/{{ $attendance->id }}">編集</a>
-            </td>
+        <tr>
+            <td>{{ $attendance['id'] }}</td>
+            <td>{{ $attendance['date'] }}</td>
+            <td>{{ $attendance['status'] }}</td>
         </tr>
         @endforeach
     </table>

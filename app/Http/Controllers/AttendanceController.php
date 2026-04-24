@@ -51,12 +51,6 @@ class AttendanceController extends Controller
         ]);
         return back()->with('success', '退勤しました');
     }
-    public function index()
-    {
-        $attendances = Attendance::whereMonth('work_date', date('m'))
-            ->orderBy('work_date')->get();
-        return view('attendance.index', compact('attendances'));
-    }
     public function edit($id)
     {
         $attendance = Attendance::findOrFail($id);
@@ -70,5 +64,12 @@ class AttendanceController extends Controller
         ]);
         return redirect('/attendance')->with('success', '更新しました');
     }
-
+    public function index()
+    {
+        $attendances = [
+            ['id' => 1, 'date' => '2026-04-24', 'status' => '出勤'],
+            ['id' => 2, 'date' => '2026-04-23', 'status' => '退勤'],
+            ];
+            return view('attendance.index', compact('attendances'));
+    }
 }
