@@ -1,10 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
+<html lang="ja">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>勤怠管理</title>
 
     <style>
@@ -12,68 +9,207 @@
             font-family: Arial, sans-serif;
             background-color: #f5f6fa;
             padding: 20px;
+            max-width: 900px;
+            margin: auto;
         }
+
         h1 {
             margin-bottom: 20px;
         }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .left {
+            width: 35%;
+        }
+
+        .right {
+            width: 65%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            text-align: center;
+        }
+
+        .status-text {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .today {
+            background-color: #e3f2fd;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #fff;
         }
+
         th, td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
             text-align: center;
         }
+
         th {
             background-color: #f0f0f0;
         }
+
         button {
-            padding: 10px 20px;
-            margin: 5px;
+            padding: 10px;
             border: none;
             background-color: #4caf50;
             color: white;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
         .clock-out {
             background-color: #f44336;
         }
+
         .clock-out:hover {
             background-color: #da190b;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <h1>勤怠一覧</h1>
 
-    <form method="POST" action="/clock-in" style="display: inline;">
-        @csrf
-        <button type="submit">出勤</button>
-    </form>
+<h1>勤怠管理</h1>
 
-    <form method="POST" action="/clock-out" style="display: inline;">
-        @csrf
-        <button type="submit" class="clock-out">退勤</button>
-    </form>
+{{-- メッセージ --}}
+@if(session('success'))
+    <p style="color: green;">{{ session('success') }}</p>
+@endif
 
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>日付</th>
-            <th>状態</th>
-        </tr>
-        @foreach($attendances as $attendance)
-        <tr>
-            <td>{{ $attendance['id'] }}</td>
-            <td>{{ $attendance['date'] }}</td>
-            <td>{{ $attendance['status'] }}</td>
-        </tr>
-        @endforeach
-    </table>
+@if(session('error'))
+    <p style="color: red;">{{ session('error') }}</p>
+@endif
+
+<div class="container">
+
+    <!-- 左 -->
+    <div class="left">
+
+        <!-- 状態 -->
+        <div class="card status">
+            <h2>現在の状態</h2>
+
+            @if($todayAttendance && $todayAttendance->clock_in && !$todayAttendance->clock_out)
+                <h2 class="status-text" style="color: green;">出勤中</h2>
+            @elseif($todayAttendance && $todayAttendance->clock_out)
+                <h2 class="status-text" style="color: red;">退勤済</h2>
+            @else
+                <h2 class="status-text">未出勤</h2>
+            @endif
+        </div>
+
+        <!-- 打刻 -->
+        <div class="card actions">
+            <h2>打刻</h2>
+
+            <form method="POST" action="/clock-in">
+                @csrf
+                <button
+                    @if($todayAttendance && $todayAttendance->clock_in) disabled @endif>
+                    出勤
+                </button>
+            </form>
+
+            <form method="POST" action="/clock-out">
+                @csrf
+                <button class="clock-out"
+                    @if(!$todayAttendance || $todayAttendance->clock_out) disabled @endif>
+                    退勤
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- 右 -->
+    <div class="right">
+
+        <h2>勤怠一覧</h2>
+
+        <table>
+            <tr>
+                <th>日付</th>
+                <th>出勤</th>
+                <th>退勤</th>
+                <th>勤務時間</th>
+                <th>状態</th>
+            </tr>
+
+            @foreach($attendances as $attendance)
+            <tr class="{{ $attendance->work_date == now()->toDateString() ? 'today' : '' }}">
+                <td>{{ $attendance->work_date }}</td>
+
+                <td>
+                    {{ $attendance->clock_in
+                        ? \Carbon\Carbon::parse($attendance->clock_in)->format('H:i')
+                        : '-' }}
+                </td>
+
+                <td>
+                    {{ $attendance->clock_out
+                        ? \Carbon\Carbon::parse($attendance->clock_out)->format('H:i')
+                        : '-' }}
+                </td>
+
+                <td>
+                    @if($attendance->clock_in && $attendance->clock_out)
+                        {{ \Carbon\Carbon::parse($attendance->clock_in)
+                            ->diff(\Carbon\Carbon::parse($attendance->clock_out))
+                            ->format('%h時間 %i分') }}
+                    @else
+                        -
+                    @endif
+                </td>
+
+                <td>
+                    @if($attendance->clock_in && !$attendance->clock_out)
+                        出勤中
+                    @elseif($attendance->clock_out)
+                        退勤済
+                    @else
+                        未出勤
+                    @endif
+                </td>
+            </tr>
+            @endforeach
+        </table>
+
+    </div>
+
+</div>
+
 </body>
 </html>

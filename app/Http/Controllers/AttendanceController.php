@@ -5,16 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-
-use function Symfony\Component\Clock\now;
 
 class AttendanceController extends Controller
 {
+    public function index()
+    {
+        $userId = Auth::id();
+        $attendances = Attendance::where('user_id', $userId)->orderBy('work_date', 'desc')->get();
+        $today = now()->toDateString();
+        $todayAttendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
+        return view('attendance.index', compact('attendances', 'todayAttendance'));
+    }
+
     public function clockIn()
     {
-        $today = date('Y-m-d');
-        $attendance = Attendance::where('work_date', $today)->first();
+        
+        $today = now()->toDateString();
+        $userId = Auth::id();
+
+        $attendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
 
         if($attendance && $attendance->clock_in){
             return back()->with('error', 'すでに出勤済みです');
@@ -22,6 +31,7 @@ class AttendanceController extends Controller
 
         if(!$attendance){
             Attendance::create([
+                'user_id' => $userId,
                 'work_date' => $today,
                 'clock_in' => now(),
             ]);
@@ -35,8 +45,10 @@ class AttendanceController extends Controller
 
     public function clockOut()
     {
-        $today = date('Y-m-d');
-        $attendance = Attendance::where('work_date', $today)->first();
+        $today = now()->toDateString();
+        $userId = Auth::id();
+
+        $attendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
 
         if(!$attendance) {
             return back()->with('error', '退勤データがありません');
@@ -56,20 +68,16 @@ class AttendanceController extends Controller
         $attendance = Attendance::findOrFail($id);
         return view('attendance.edit', compact('attendance'));
     }
+
     public function update(Request $request, $id)
     {
+        $attendance = Attendance::findOrFail($id);
+
         $attendance->update([
             'clock_in' => $request->clock_in,
             'clock_out' => $request->clock_out,
         ]);
         return redirect('/attendance')->with('success', '更新しました');
     }
-    public function index()
-    {
-        $attendances = [
-            ['id' => 1, 'date' => '2026-04-24', 'status' => '出勤'],
-            ['id' => 2, 'date' => '2026-04-23', 'status' => '退勤'],
-            ];
-            return view('attendance.index', compact('attendances'));
-    }
+    
 }
