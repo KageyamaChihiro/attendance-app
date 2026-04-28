@@ -29,10 +29,10 @@ Laravelを使用して作成したシンプルな勤怠管理アプリです。
 ## 画面イメージ
 
 ### 勤怠画面一覧
-![勤怠一覧](images/attendance-list.png)
+![勤怠一覧](./images/attendance-list.png)
 
 ### 編集画面
-![編集画面](images/attendance-edit.png)
+![編集画面](./images/attendance-edit.png)
 
 ---
 
