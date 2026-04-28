@@ -135,7 +135,7 @@
         <div class="card actions">
             <h2>打刻</h2>
 
-            <form method="POST" action="/clock-in">
+            <form method="POST" action="{{ route('clock.in') }}">
                 @csrf
                 <button
                     @if($todayAttendance && $todayAttendance->clock_in) disabled @endif>
@@ -143,7 +143,7 @@
                 </button>
             </form>
 
-            <form method="POST" action="/clock-out">
+            <form method="POST" action="{{ route('clock.out') }}">
                 @csrf
                 <button class="clock-out"
                     @if(!$todayAttendance || $todayAttendance->clock_out) disabled @endif>
@@ -166,6 +166,7 @@
                 <th>退勤</th>
                 <th>勤務時間</th>
                 <th>状態</th>
+                <th>操作</th>
             </tr>
 
             @foreach($attendances as $attendance)
@@ -202,6 +203,11 @@
                     @else
                         未出勤
                     @endif
+                </td>
+                                <td>
+                    <a href="{{ route('attendance.edit', $attendance->id) }}">
+                        編集
+                    </a>
                 </td>
             </tr>
             @endforeach

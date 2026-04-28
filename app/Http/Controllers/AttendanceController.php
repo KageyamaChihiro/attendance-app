@@ -6,11 +6,12 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Auth;
 
+
 class AttendanceController extends Controller
 {
     public function index()
     {
-        $userId = Auth::id();
+        $userId = 1;
         $attendances = Attendance::where('user_id', $userId)->orderBy('work_date', 'desc')->get();
         $today = now()->toDateString();
         $todayAttendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
@@ -19,38 +20,33 @@ class AttendanceController extends Controller
 
     public function clockIn()
     {
-        
         $today = now()->toDateString();
-        $userId = Auth::id();
+        $userId = 1;
 
         $attendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
 
         if($attendance && $attendance->clock_in){
             return back()->with('error', 'すでに出勤済みです');
         }
-
-        if(!$attendance){
-            Attendance::create([
+        $attendance = Attendance::updateOrCreate(
+            [
                 'user_id' => $userId,
                 'work_date' => $today,
+            ],
+            [
                 'clock_in' => now(),
             ]);
-        } else {
-            $attendance->update([
-                'clock_in' => now(),
-            ]);
-        }
         return back()->with('success', '出勤しました');
     }
 
     public function clockOut()
     {
         $today = now()->toDateString();
-        $userId = Auth::id();
+        $userId = 1;
 
         $attendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
 
-        if(!$attendance) {
+        if(!$attendance || !$attendance->clock_in) {
             return back()->with('error', '退勤データがありません');
         }
 
@@ -71,13 +67,11 @@ class AttendanceController extends Controller
 
     public function update(Request $request, $id)
     {
-        $attendance = Attendance::findOrFail($id);
-
-        $attendance->update([
-            'clock_in' => $request->clock_in,
-            'clock_out' => $request->clock_out,
+        $attendance = Attendance::where('id', $id)->where('user_id', 1)->firstOrFail();
+        $request->validate([
+            'clock_in' => 'nullable|date',
+            'clock_out' => 'nullable|date|after:clock_in',
         ]);
-        return redirect('/attendance')->with('success', '更新しました');
+        return redirect()->route('attendance.index');
     }
-    
 }
