@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="utf-8">
     <title>勤怠管理</title>
@@ -15,6 +16,7 @@
 
         h1 {
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .container {
@@ -57,6 +59,7 @@
 
         .today {
             background-color: #e3f2fd;
+            font-weight: bold;
         }
 
         table {
@@ -64,7 +67,8 @@
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
             text-align: center;
@@ -76,6 +80,7 @@
 
         button {
             padding: 10px;
+            width: 100%;
             border: none;
             background-color: #4caf50;
             color: white;
@@ -100,122 +105,151 @@
         }
     </style>
 </head>
+
 <body>
 
-<h1>勤怠管理</h1>
+    <h1 style="margin-bottom: 20px;">勤怠管理</h1>
 
-{{-- メッセージ --}}
-@if(session('success'))
+    {{-- メッセージ --}}
+    @if(session('success'))
     <p style="color: green;">{{ session('success') }}</p>
-@endif
+    @endif
 
-@if(session('error'))
+    @if(session('error'))
     <p style="color: red;">{{ session('error') }}</p>
-@endif
+    @endif
 
-<div class="container">
+    <div class="container">
 
-    <!-- 左 -->
-    <div class="left">
+        <!-- 左 -->
+        <div class="left">
 
-        <!-- 状態 -->
-        <div class="card status">
-            <h2>現在の状態</h2>
+            <!-- 状態 -->
+            <div class="card status">
+                <h2>現在の状態</h2>
 
-            @if($todayAttendance && $todayAttendance->clock_in && !$todayAttendance->clock_out)
+                @if($todayAttendance && $todayAttendance->clock_in && !$todayAttendance->clock_out)
                 <h2 class="status-text" style="color: green;">出勤中</h2>
-            @elseif($todayAttendance && $todayAttendance->clock_out)
+                @elseif($todayAttendance && $todayAttendance->clock_out)
                 <h2 class="status-text" style="color: red;">退勤済</h2>
-            @else
+                @else
                 <h2 class="status-text">未出勤</h2>
-            @endif
+                @endif
+            </div>
+
+            <!-- 打刻 -->
+
+            <div class="card">
+                <h3>合計勤務時間</h3>
+                <p style="font-size: 20px; font-weight: bold; margin-top: 10px;">
+                    {{ floor($totalMinutes /60)}}時間 {{$totalMinutes % 60}}分
+                </p>
+            </div>
+            <div class="card actions">
+                <h2>打刻</h2>
+
+                <form method="POST" action="{{ route('clock.in') }}">
+                    @csrf
+                    <button
+                        @if($todayAttendance && $todayAttendance->clock_in) disabled @endif>
+                        出勤
+                    </button>
+                </form>
+
+                @if($todayAttendance && $todayAttendance->clock_in)
+                <form method="POST" action="/break-update">
+                    @csrf
+                    <label>休憩時間(分)</label>
+                    <input type="number" name="break_time" value="{{ $todayAttendance->break_time ?? 60 }}" min="0" max="180">
+                    <button type="submit">更新</button>
+                    <p>休憩時間:{{ $todayAttendance->break_time ?? 60 }}分</p>
+                </form>
+                @endif
+
+                <form method="POST" action="{{ route('clock.out') }}">
+                    @csrf
+                    <button class="clock-out"
+                        @if(!$todayAttendance || $todayAttendance->clock_out) disabled @endif>
+                        退勤
+                    </button>
+                </form>
+            </div>
+
         </div>
 
-        <!-- 打刻 -->
-        <div class="card actions">
-            <h2>打刻</h2>
+        <!-- 右 -->
+        <div class="right">
 
-            <form method="POST" action="{{ route('clock.in') }}">
-                @csrf
-                <button
-                    @if($todayAttendance && $todayAttendance->clock_in) disabled @endif>
-                    出勤
-                </button>
-            </form>
+            <h2>勤怠一覧</h2>
 
-            <form method="POST" action="{{ route('clock.out') }}">
-                @csrf
-                <button class="clock-out"
-                    @if(!$todayAttendance || $todayAttendance->clock_out) disabled @endif>
-                    退勤
-                </button>
-            </form>
-        </div>
+            <table>
+                <tr>
+                    <th>日付</th>
+                    <th>出勤</th>
+                    <th>退勤</th>
+                    <th>休憩</th>
+                    <th>実働時間</th>
+                    <th>状態</th>
+                    <th>操作</th>
+                </tr>
 
-    </div>
+                @foreach($attendances as $attendance)
+                <tr class="{{ $attendance->work_date == now()->toDateString() ? 'today' : '' }}">
+                    <td>{{ $attendance->work_date }}</td>
 
-    <!-- 右 -->
-    <div class="right">
-
-        <h2>勤怠一覧</h2>
-
-        <table>
-            <tr>
-                <th>日付</th>
-                <th>出勤</th>
-                <th>退勤</th>
-                <th>勤務時間</th>
-                <th>状態</th>
-                <th>操作</th>
-            </tr>
-
-            @foreach($attendances as $attendance)
-            <tr class="{{ $attendance->work_date == now()->toDateString() ? 'today' : '' }}">
-                <td>{{ $attendance->work_date }}</td>
-
-                <td>
-                    {{ $attendance->clock_in
+                    <td>
+                        {{ $attendance->clock_in
                         ? \Carbon\Carbon::parse($attendance->clock_in)->format('H:i')
                         : '-' }}
-                </td>
+                    </td>
 
-                <td>
-                    {{ $attendance->clock_out
+                    <td>
+                        {{ $attendance->clock_out
                         ? \Carbon\Carbon::parse($attendance->clock_out)->format('H:i')
                         : '-' }}
-                </td>
+                    </td>
 
-                <td>
-                    @if($attendance->clock_in && $attendance->clock_out)
-                        {{ \Carbon\Carbon::parse($attendance->clock_in)
-                            ->diff(\Carbon\Carbon::parse($attendance->clock_out))
-                            ->format('%h時間 %i分') }}
-                    @else
+                    <td>{{ $attendance->break_time ?? 0}}分</td>
+
+                    <td>
+                        @if($attendance->clock_in && $attendance->clock_out)
+                        @php
+                        $workMinutes = \Carbon\Carbon::parse($attendance->clock_in)
+                        ->diffInMinutes(\Carbon\Carbon::parse($attendance->clock_out));
+
+                        $actualMinutes = max(0, $workMinutes - ($attendance->break_time ?? 0));
+
+                        $hours = floor($actualMinutes /60);
+                        $minutes = $actualMinutes % 60;
+                        @endphp
+
+                        {{ $hours }}時間 {{ $minutes}}分
+                        @else
                         -
-                    @endif
-                </td>
-
-                <td>
-                    @if($attendance->clock_in && !$attendance->clock_out)
+                        @endif
+                    </td>
+                    <td>
+                        @if($attendance->clock_in && !$attendance->clock_out)
                         出勤中
-                    @elseif($attendance->clock_out)
+                        @elseif($attendance->clock_out)
                         退勤済
-                    @else
+                        @else
                         未出勤
-                    @endif
-                </td>
-                                <td>
-                    <a href="{{ route('attendance.edit', $attendance->id) }}">
-                        編集
-                    </a>
-                </td>
-            </tr>
-            @endforeach
-        </table>
+                        @endif
+                    </td>
+                    <td>
+                        <a href="{{ route('attendance.edit', $attendance->id) }}">
+                            編集
+                        </a>
+                    </td>
+                </tr>
+                @endforeach
+            </table>
+
+        </div>
 
     </div>
 
-</div>
-
 </body>
+
 </html>

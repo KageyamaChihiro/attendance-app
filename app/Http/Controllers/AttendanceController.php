@@ -15,7 +15,14 @@ class AttendanceController extends Controller
         $attendances = Attendance::where('user_id', $userId)->orderBy('work_date', 'desc')->get();
         $today = now()->toDateString();
         $todayAttendance = Attendance::where('user_id', $userId)->where('work_date', $today)->first();
-        return view('attendance.index', compact('attendances', 'todayAttendance'));
+        $totalMinutes = $attendances->sum(function ($a) {
+            if($a->clock_in && $a->clock_out) {
+                $work = \Carbon\Carbon::parse($a->clock_in)->diffInMinutes(\Carbon\Carbon::parse($a->clock_out));
+                return $work - ($a->break_time ?? 0);
+            }
+            return 0;
+        });
+        return view('attendance.index', compact('attendances', 'todayAttendance', 'totalMinutes'));
     }
 
     public function clockIn()
@@ -73,5 +80,20 @@ class AttendanceController extends Controller
             'clock_out' => 'nullable|date|after:clock_in',
         ]);
         return redirect()->route('attendance.index');
+    }
+    public function updateBreak(Request $request)
+    {
+        $request->validate(['break_time' => 'required|integer|min:0|max:180',]);
+
+        $today = date('Y-m-d');
+        $attendance = Attendance::where('user_id', 1)->where('work_date', $today)->first();
+
+        if(!$attendance) {
+            return back()->with('error', 'データがありません');
+        }
+        $attendance->break_time = $request->break_time;
+        $attendance->save();
+        return back()->with('success', '休憩時間を更新しました');
+        
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\AttendanceController;
 Route::get('/', fn() => redirect('/attendance'));
 
 Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('clock.in');
+Route::post('/break-update', [AttendanceController::class, 'updateBreak']);
 Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('clock.out');
 
 Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
