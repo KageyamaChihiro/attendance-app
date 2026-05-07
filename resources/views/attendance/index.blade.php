@@ -188,11 +188,14 @@
                     <th>出勤</th>
                     <th>退勤</th>
                     <th>休憩</th>
+                    <th>勤務区分</th>
+                    <th>予定時間</th>
                     <th>実働時間</th>
+                    <th>残業時間</th>
                     <th>状態</th>
                     <th>操作</th>
                 </tr>
-
+                
                 @foreach($attendances as $attendance)
                 <tr class="{{ $attendance->work_date == now()->toDateString() ? 'today' : '' }}">
                     <td>{{ $attendance->work_date }}</td>
@@ -211,8 +214,16 @@
 
                     <td>{{ $attendance->break_time ?? 0}}分</td>
 
+                    <td>{{ $attendance->work_type }}</td>
+
                     <td>
-                        @if($attendance->clock_in && $attendance->clock_out)
+                        {{ $attendance->scheduled_start ?? '-' }}～{{ $attendance->scheduled_end ?? '-'}}
+                    </td>
+
+                    <td>
+                        @if($attendance->work_type === '有給')
+                        有給
+                        @elseif($attendance->clock_in && $attendance->clock_out)
                         @php
                         $workMinutes = \Carbon\Carbon::parse($attendance->clock_in)
                         ->diffInMinutes(\Carbon\Carbon::parse($attendance->clock_out));
@@ -228,6 +239,30 @@
                         -
                         @endif
                     </td>
+                    <td>
+                        @if(
+                            $attendance->clock_out &&
+                            $attendance->scheduled_end &&
+                            $attendance->work_type !== '有給'
+                        )
+                        @php
+                        $overtimeMinutes = \Carbon\Carbon::parse($attendance->scheduled_end)
+                        ->diffInMinutes(\Carbon\Carbon::parse($attendance->clock_out),
+                                        false);
+                        $overtimeMinutes = max(0, $overtimeMinutes);
+                        $overtimeHours = floor($overtimeMinutes /60);
+                        $overtimeMinutes = $overtimeMinutes % 60;
+                        @endphp
+
+                        {{ $overtimeHours }}時間 {{ $overtimeMinutes }}分
+
+                        @else
+
+                        -
+
+                        @endif
+                    </td>
+                    
                     <td>
                         @if($attendance->clock_in && !$attendance->clock_out)
                         出勤中

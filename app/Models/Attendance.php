@@ -11,5 +11,8 @@ class Attendance extends Model
         'work_date',
         'clock_in',
         'clock_out',
+        'scheduled_start',
+        'scheduled_end',
+        'work_type',
     ];
 }
