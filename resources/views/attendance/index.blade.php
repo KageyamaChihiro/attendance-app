@@ -8,107 +8,147 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5f6fa;
-            padding: 20px;
-            max-width: 900px;
+            background-color: #eef2f7;
+            padding: 30px;
+            max-width: 1200px;
             margin: auto;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            text-align: center;
+            color: #333;
         }
 
         .container {
             display: flex;
             gap: 20px;
+            align-items: flex-start;
         }
 
         .left {
-            width: 35%;
+            width: 320px;
         }
 
         .right {
-            width: 65%;
+            flex: 1;
             background: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
         .card {
             background: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 14px;
             margin-bottom: 20px;
-        }
-
-        .status {
-            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
         .status-text {
-            font-size: 36px;
+            font-size: 40px;
             font-weight: bold;
+            margin-top: 10px;
         }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .today {
-            background-color: #e3f2fd;
-            font-weight: bold;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f0f0f0;
+        .actions form {
+            margin-bottom: 10px;
         }
 
         button {
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             border: none;
+            border-radius: 8px;
             background-color: #4caf50;
             color: white;
             cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.2s;
         }
 
         button:hover {
-            background-color: #45a049;
+            transform: translateY(-1px);
+            opacity: 0.95;
         }
 
         .clock-out {
             background-color: #f44336;
         }
 
-        .clock-out:hover {
-            background-color: #da190b;
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
         }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #2f3640;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .today {
+            background-color: #e8f4ff;
+            font-weight: bold;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media screen and (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left {
+                width: 100%;
+            }
+        }
+
+        .status-working {
+            color: #16a34a;
+        }
+
+        .status-finished {
+            color: #dc2626;
+        }
+
+        .status-wait {
+            color: #555;
         }
     </style>
 </head>
 
 <body>
 
-    <h1 style="margin-bottom: 20px;">勤怠管理</h1>
+    <h1>勤怠管理システム</h1>
 
     {{-- メッセージ --}}
     @if(session('success'))
@@ -129,7 +169,7 @@
                 <h2>現在の状態</h2>
 
                 @if($todayAttendance && $todayAttendance->clock_in && !$todayAttendance->clock_out)
-                <h2 class="status-text" style="color: green;">出勤中</h2>
+                <h2 class="status-text status-working">出勤中</h2>
                 @elseif($todayAttendance && $todayAttendance->clock_out)
                 <h2 class="status-text" style="color: red;">退勤済</h2>
                 @else
@@ -179,8 +219,25 @@
 
         <!-- 右 -->
         <div class="right">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:20px;
+                margin-bottom:20px;
+                background:white;
+                padding:12px 20px;
+                border-radius:10px;
+                ">
+                <a href="{{ route('attendance.index', ['month' => $month->copy()->subMonth()->format('Y-m')]) }}">
+                    ←前月
+                </a>
 
-            <h2>勤怠一覧</h2>
+                <h2>{{ $month->format('Y年m月') }}</h2>
+
+                <a href="{{ route('attendance.index', ['month' => $month->copy()->addMonth()->format('Y-m')]) }}">
+                    次月→
+                </a>
+            </div>
 
             <table>
                 <tr>

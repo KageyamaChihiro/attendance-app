@@ -10,11 +10,18 @@ use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $attendances = Attendance::orderBy('work_date', 'desc')->get();
+        $month = $request->month ? \Carbon\Carbon::parse($request->month): now();
+        $attendances = Attendance::whereYear('work_date', $month->year)
+            ->wheremonth('work_date', $month->month)
+            ->orderBy('work_date', 'desc')
+            ->get();
+
         $today = now()->toDateString();
+
         $todayAttendance = Attendance::where('work_date', $today)->first();
+
         $totalMinutes = $attendances->sum(function ($a) {
             if($a->clock_in && $a->clock_out) {
                 $work = \Carbon\Carbon::parse($a->clock_in)->diffInMinutes(\Carbon\Carbon::parse($a->clock_out));
@@ -22,7 +29,12 @@ class AttendanceController extends Controller
             }
             return 0;
         });
-        return view('attendance.index', compact('attendances', 'todayAttendance', 'totalMinutes'));
+        return view('attendance.index', compact(
+            'attendances',
+            'todayAttendance',
+            'totalMinutes',
+            'month'
+            ));
     }
 
     public function clockIn()
@@ -77,6 +89,7 @@ class AttendanceController extends Controller
             'clock_out' => 'nullable|date|after:clock_in',
         ]);
         $attendance->update([
+            'work_date' => $request->work_date,
             'clock_in' => $request->clock_in ? Carbon::parse($request->clock_in)->format('H:i:s'): null,
             'clock_out' => $request->clock_out ? Carbon::parse($request->clock_out)->format('H:i:s'): null,
             'work_type' => $request->work_type,
